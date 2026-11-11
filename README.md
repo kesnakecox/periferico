@@ -1,1 +1,1 @@
-periferi.co
+periferico

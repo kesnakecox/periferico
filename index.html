@@ -56,11 +56,11 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
 h1{font-family:var(--display);font-weight:200;line-height:1.06;letter-spacing:-.035em;
   font-size:clamp(28px,5vw,84px)}
 .bajada{font-size:clamp(15px,1.3vw,19px);line-height:1.5;color:var(--tenue);max-width:44ch;
-  margin-top:clamp(16px,2.4vh,26px)}
-#hablemos{margin-top:clamp(18px,2.6vh,28px)}
+  margin-top:clamp(10px,1.3vh,18px)}
+#hablemos{margin-top:clamp(14px,2vh,24px)}
 .rota{display:inline-block;color:var(--rosa);
-  transition:opacity .25s ease,filter .25s ease,transform .25s ease}
-.rota.cambia{opacity:0;filter:blur(10px);transform:translateY(.12em)}
+  transition:opacity .18s ease,filter .18s ease,transform .18s ease}
+.rota.cambia{opacity:0;filter:blur(8px);transform:translateY(.06em)}
 .acciones{display:flex;flex-wrap:wrap;gap:10px}
 #gesto{position:fixed;left:var(--cx,50%);top:var(--cy,42%);transform:translate(-50%,-50%);z-index:3;
   pointer-events:none;width:210px;height:210px;transition:opacity .35s ease;animation:respira 3.4s ease-in-out infinite}
@@ -98,6 +98,8 @@ body.tocando #gesto{opacity:0;animation:none}
 @media (max-width:760px){
   #gesto{width:180px;height:180px}
     h1{font-size:clamp(26px,7.6vw,40px)}
+  .bajada{margin-top:8px}
+  #hablemos{margin-top:14px}
       }
 @media (prefers-reduced-motion:reduce){
   #blanco,.rota{transition:none}
@@ -158,7 +160,7 @@ body.tocando #gesto{opacity:0;animation:none}
     let n = 0;
     const paso = () => {
       el.classList.add('cambia');
-      setTimeout(() => { n = (n+1) % lista.length; el.textContent = lista[n]; el.classList.remove('cambia'); }, 260);
+      setTimeout(() => { n = (n+1) % lista.length; el.textContent = lista[n]; el.classList.remove('cambia'); }, 190);
       setTimeout(paso, 2400);
     };
     setTimeout(paso, 2400);

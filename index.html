@@ -37,7 +37,9 @@ canvas#cielo:active{cursor:grabbing}
 #escena a,#escena button{pointer-events:auto}
 
 header{display:flex;justify-content:space-between;align-items:center;gap:12px}
-.marca{font-family:var(--display);font-weight:300;font-size:clamp(18px,1.8vw,24px);letter-spacing:-.01em}
+.marca{font-family:var(--display);font-weight:300;font-size:clamp(18px,1.8vw,24px);letter-spacing:-.01em;
+  cursor:pointer;transition:opacity .2s;pointer-events:auto}
+.marca:hover{opacity:.6}
 button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
 .b{font-size:15px;font-weight:600;padding:.8em 1.35em;border-radius:999px;transition:background .2s,color .2s,border-color .2s;white-space:nowrap}
 .b.uno{background:var(--violeta);color:var(--blanco);box-shadow:0 0 0 1px rgba(255,255,255,.18) inset,0 8px 30px rgba(79,9,230,.55)}
@@ -108,12 +110,12 @@ body.centro .gesto{opacity:.35}
 </style>
 </head>
 <body>
-<canvas id="cielo" aria-label="Universo de partículas en 3D. Mantén presionado para traer todo al centro."></canvas>
+<canvas id="cielo" aria-label="Universo de partículas en 3D. Mantener presionado para traer todo al centro."></canvas>
 <div id="grano"></div>
 
 <main id="escena">
   <header>
-    <div class="marca">periferi.co</div>
+    <button class="marca" id="inicio">periferi.co</button>
     <button class="b uno" id="hablemos">Hablemos</button>
   </header>
 
@@ -128,14 +130,14 @@ body.centro .gesto{opacity:.35}
     </div>
     <div class="lado">
       <p>Somos un company builder. Tu partner estratégico para que vuelvas a lo realmente importante: tu negocio.</p>
-<div class="gesto" id="gesto"><span class="aro"></span>Mantén apretado</div>
+<div class="gesto" id="gesto"><span class="aro"></span>Mantener presionado</div>
     </div>
   </section>
 </main>
 
 
 <section id="blanco" aria-hidden="true">
-  <div class="marca">periferi.co</div>
+  <button class="marca" id="inicio2">periferi.co</button>
   <div class="manifiesto">
     <p>El centro repite. El margen inventa.</p>
     <p>Trabajamos desde afuera, con lo justo. Esa falta es nuestra ventaja.</p>
@@ -145,7 +147,7 @@ body.centro .gesto{opacity:.35}
     <p>Creemos y creamos desde las periferias para volver al centro.</p>
     <div class="cierre">
       <h2>Hablemos</h2>
-      <a class="correo" href="mailto:hello@periferi.co">hello@periferi.co</a>
+      <a class="correo" href="mailto:hello@periferi.co?subject=Hablemos">hello@periferi.co</a>
     </div>
     <button id="volver">Volver al margen</button>
   </div>
@@ -158,8 +160,7 @@ body.centro .gesto{opacity:.35}
   /* ---------- Palabra que se tacha ---------- */
   (() => {
     const el = document.getElementById('rota');
-    const lista = ['al centro','a tu usuario','a tu público','a tu especialidad','a lo importante','a tu esencia','a tu origen',
-      'a tu propósito','a tu oficio','a tu norte','a tu gente','a lo que te mueve','a lo que haces mejor','a tu razón de ser','a tu punto de partida'];
+    const lista = ['al centro','a tu usuario','a tu propósito','a tu norte','a tu origen'];
     let n = 0;
     const paso = () => {
       el.classList.add('tachado');
@@ -337,6 +338,13 @@ body.centro .gesto{opacity:.35}
     blanco.classList.add('ver'); blanco.setAttribute('aria-hidden', false);
     blanco.querySelector('.correo').focus({preventScroll:true});
   }
+  function reiniciar(){
+    blanco.classList.remove('ver'); blanco.setAttribute('aria-hidden', true);
+    enBlanco = false; boom = 0; prog = 0; presion = false; fijar(false); rafaga = 1.6;
+    antes = performance.now(); requestAnimationFrame(cuadro);
+  }
+  document.getElementById('inicio').addEventListener('click', reiniciar);
+  document.getElementById('inicio2').addEventListener('click', reiniciar);
   document.getElementById('volver').addEventListener('click', () => {
     blanco.classList.remove('ver'); blanco.setAttribute('aria-hidden', true);
     enBlanco = false; boom = 0; prog = 0; presion = false; fijar(false); rafaga = 1.6;

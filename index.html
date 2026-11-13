@@ -73,23 +73,26 @@ h1{font-family:var(--display);font-weight:200;line-height:1.06;letter-spacing:-.
 @keyframes late{from{transform:scale(1);opacity:1}to{transform:scale(2.9);opacity:0}}
 @keyframes gira{to{transform:rotate(360deg)}}
 body.tocando #gesto{opacity:0;animation:none}
+body.final #escena,body.final #gesto{opacity:0;visibility:hidden;transition:opacity .35s,visibility .35s}
 @keyframes respira{0%,100%{opacity:.95}50%{opacity:.5}}
 
-#blanco{position:fixed;inset:0;z-index:6;background:#fff;color:var(--noche);overflow:auto;
-  display:grid;place-items:center;padding:calc(var(--borde)*2 + 30px) var(--borde) var(--borde);
+#blanco{position:fixed;inset:0;z-index:6;background:transparent;color:var(--noche);overflow:hidden;
   opacity:0;visibility:hidden;transition:opacity .5s,visibility .5s;user-select:text;-webkit-user-select:text}
 #blanco.ver{opacity:1;visibility:visible}
 #blanco .marca{position:absolute;top:var(--borde);left:var(--borde);color:var(--noche)}
-.nucleo{display:flex;flex-direction:column;align-items:center;text-align:center;gap:clamp(10px,2vh,18px)}
-#blanco h2{font-family:var(--display);font-weight:200;font-size:clamp(56px,13vw,180px);line-height:1;letter-spacing:-.045em}
-#blanco .correo{font-family:var(--display);font-weight:300;font-size:clamp(17px,2.4vw,32px);color:var(--violeta);
+#blanco:not(.ver){pointer-events:none}
+.nucleo{position:absolute;left:var(--cx,50%);top:var(--cy,42%);transform:translate(-50%,-50%);
+  display:flex;flex-direction:column;align-items:center;text-align:center;gap:clamp(8px,1.4vh,14px);
+  width:max-content;max-width:min(78vw,340px)}
+#blanco h2{font-family:var(--display);font-weight:300;font-size:clamp(19px,2.2vw,30px);line-height:1;letter-spacing:-.02em}
+#blanco .correo{font-family:var(--display);font-weight:300;font-size:clamp(15px,1.6vw,21px);color:var(--violeta);
   text-decoration:underline;text-underline-offset:.25em;text-decoration-thickness:1.5px;word-break:break-word}
 #blanco .correo:hover{color:var(--rosa)}
-.lema{font-family:var(--display);font-weight:300;font-size:clamp(15px,1.9vw,26px);line-height:1.25;letter-spacing:-.02em;
   margin-top:clamp(14px,3vh,30px);text-wrap:balance}
-#volver{margin-top:clamp(14px,3vh,28px);font-size:14px;font-weight:600;padding:.75em 1.3em;border-radius:999px;
-  border:1px solid rgba(8,2,34,.3)}
-#volver:hover{background:var(--noche);color:#fff}
+#volver{margin-top:clamp(18px,4vh,34px);width:46px;height:46px;border-radius:50%;display:grid;place-items:center;
+  border:1px solid rgba(8,2,34,.28);color:var(--noche);transition:background .2s,color .2s,border-color .2s,transform .2s}
+#volver svg{width:21px;height:21px}
+#volver:hover{background:var(--noche);border-color:var(--noche);color:#fff;transform:translateX(-3px)}
 #blanco.ver .nucleo > *{animation:entra .8s cubic-bezier(.2,.8,.2,1) both}
 #blanco.ver .nucleo > :nth-child(2){animation-delay:.2s}
 #blanco.ver .nucleo > :nth-child(3){animation-delay:.4s}
@@ -144,8 +147,12 @@ body.tocando #gesto{opacity:0;animation:none}
   <div class="nucleo">
     <h2>Hablemos</h2>
     <a class="correo" href="mailto:hello@periferi.co?subject=Hablemos">hello@periferi.co</a>
-    <p class="lema">El centro repite. El margen inventa.</p>
-    <button id="volver">Volver al margen</button>
+    <button id="volver" type="button" aria-label="Volver al margen" title="Volver al margen">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M7 5 3 9l4 4"></path>
+        <path d="M3 9h11a5 5 0 0 1 0 10H9"></path>
+      </svg>
+    </button>
   </div>
 </section>
 
@@ -178,11 +185,14 @@ body.tocando #gesto{opacity:0;animation:none}
   /* ---------- Escena 3D ---------- */
   const cv = document.getElementById('cielo'), c = cv.getContext('2d');
   const calmo = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const COL = ['#FFFFFF','#FFC2E4','#FF58B0','#C04DFF','#6E3BFF','#9FB4FF','#5EE6FF'];
+  const COL  = ['#FFFFFF','#FFC2E4','#FF58B0','#C04DFF','#6E3BFF','#9FB4FF','#5EE6FF'];
+  // los mismos grupos en oscuro, para cuando el fondo se vuelve blanco
+  const COLB = ['#16034F','#FF8FC6','#FF58B0','#B62BD6','#4F09E6','#6E7BFF','#00A6C9'];
   const NC = COL.length, TAU = Math.PI*2;
   let W, H, cx, cy, S, dpr, N, fondo, DIAG;
   let R, TH, Y, WV, RP, TP, YP, DL, TM, GR, orden, corte, estrellas = [];
   let prog = 0, presion = false, fijo = false, rafaga = 0, t = 0, boom = 0, enBlanco = false;
+  let modo = 'universo', entrada = 0, BX, BY, BTH, BR, BV;
   let mx = 0, my = 0, pmx = 0, pmy = 0;
   const cometa = {v:0};
   const gauss = () => (Math.random()+Math.random()+Math.random()+Math.random()-2)/2;
@@ -245,9 +255,48 @@ body.tocando #gesto{opacity:0;animation:none}
   }
 
   let antes = performance.now();
+  // anillo de reposo alrededor del centro
+  function anillo(th, rr){
+    const r = Math.min(W,H)*.27*rr;
+    return [cx + Math.cos(th)*r, cy + Math.sin(th)*r];
+  }
+
+  // al explotar las partículas no mueren: se oscurecen y se van a la periferia
+  function alBlanco(){
+    BX = new Float32Array(N); BY = new Float32Array(N);
+    BTH = new Float32Array(N); BR = new Float32Array(N); BV = new Float32Array(N);
+    for (let i = 0; i < N; i++){
+      BX[i] = cx + (Math.random()-.5)*S*.5; BY[i] = cy + (Math.random()-.5)*S*.5;
+      BTH[i] = Math.random()*TAU;
+      BR[i] = 1 + Math.pow(Math.random(), 3)*.85;   // anillo apretado con poco halo
+      BV[i] = (.05 + Math.random()*.1)/BR[i]*(Math.random() < .85 ? 1 : -1);
+    }
+    modo = 'blanco'; entrada = 1; document.body.classList.add('final');
+  }
+
+  function cuadroBlanco(dt){
+    c.setTransform(dpr,0,0,dpr,0,0);
+    c.globalCompositeOperation = 'source-over';
+    c.globalAlpha = entrada ? 1 : .16; c.fillStyle = '#FFFFFF'; c.fillRect(0,0,W,H);
+    entrada = 0;
+    for (let k = 0; k < NC; k++){
+      c.fillStyle = COLB[k]; c.globalAlpha = .42;
+      for (let n = corte[k]; n < corte[k+1]; n++){
+        const i = orden[n];
+        BTH[i] += BV[i]*dt;
+        const d = anillo(BTH[i], BR[i]);
+        BX[i] += (d[0]-BX[i])*.03; BY[i] += (d[1]-BY[i])*.03;
+        const tm = TM[i]*.9;
+        c.fillRect(BX[i]-tm*.5, BY[i]-tm*.5, tm, tm);
+      }
+    }
+    c.globalAlpha = 1;
+  }
+
   function cuadro(ahora){
     if (enBlanco) return;
     const real = Math.min((ahora-antes)/1000, .05), dt = real * (calmo ? .3 : 1); antes = ahora; t += dt;
+    if (modo === 'blanco'){ cuadroBlanco(dt); requestAnimationFrame(cuadro); return; }
     const activo = presion || fijo;
     if (boom === 0){
       prog += activo ? real/3.4 : -real/1.1; prog = prog < 0 ? 0 : prog;
@@ -326,27 +375,29 @@ body.tocando #gesto{opacity:0;animation:none}
         c.fillText(Math.max(0, Math.ceil((1-prog)*100)) + '%', cx, cy + rc*.03);
       }
     }
-    if (boom >= 1){ mostrarBlanco(); return; }
+    if (boom >= 1){ alBlanco(); mostrarBlanco(); }
     requestAnimationFrame(cuadro);
   }
 
   /* ---------- Final en blanco ---------- */
   function mostrarBlanco(){
-    enBlanco = true; cerrar();
+    cerrar();
     blanco.classList.add('ver'); blanco.setAttribute('aria-hidden', false);
     blanco.querySelector('.correo').focus({preventScroll:true});
   }
   function reiniciar(){
     blanco.classList.remove('ver'); blanco.setAttribute('aria-hidden', true);
-    enBlanco = false; boom = 0; prog = 0; presion = false; fijar(false); rafaga = 1.6;
-    antes = performance.now(); requestAnimationFrame(cuadro);
+    document.body.classList.remove('final');
+    enBlanco = false; modo = 'universo'; boom = 0; prog = 0; presion = false; fijar(false); rafaga = 1.6;
+    antes = performance.now();
   }
   document.getElementById('inicio').addEventListener('click', reiniciar);
   document.getElementById('inicio2').addEventListener('click', reiniciar);
   document.getElementById('volver').addEventListener('click', () => {
     blanco.classList.remove('ver'); blanco.setAttribute('aria-hidden', true);
-    enBlanco = false; boom = 0; prog = 0; presion = false; fijar(false); rafaga = 1.6;
-    antes = performance.now(); requestAnimationFrame(cuadro);
+    document.body.classList.remove('final');
+    enBlanco = false; modo = 'universo'; boom = 0; prog = 0; presion = false; fijar(false); rafaga = 1.6;
+    antes = performance.now();
   });
 
   /* ---------- Entrada ---------- */

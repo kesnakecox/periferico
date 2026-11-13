@@ -82,17 +82,12 @@ body.final #escena,body.final #gesto{opacity:0;visibility:hidden;transition:opac
 #blanco .marca{position:absolute;top:var(--borde);left:var(--borde);color:var(--noche)}
 #blanco:not(.ver){pointer-events:none}
 .nucleo{position:absolute;left:var(--cx,50%);top:var(--cy,42%);transform:translate(-50%,-50%);
-  display:flex;flex-direction:column;align-items:center;text-align:center;gap:clamp(8px,1.4vh,14px);
+  display:flex;flex-direction:column;align-items:center;text-align:center;gap:clamp(14px,2.4vh,22px);
   width:max-content;max-width:min(78vw,340px)}
-#blanco h2{font-family:var(--display);font-weight:300;font-size:clamp(19px,2.2vw,30px);line-height:1;letter-spacing:-.02em}
-#blanco .correo{font-family:var(--display);font-weight:300;font-size:clamp(15px,1.6vw,21px);color:var(--violeta);
+#blanco .correo{font-family:var(--texto);font-weight:500;font-size:clamp(12px,1vw,14px);letter-spacing:.02em;color:var(--violeta);
   text-decoration:underline;text-underline-offset:.25em;text-decoration-thickness:1.5px;word-break:break-word}
 #blanco .correo:hover{color:var(--rosa)}
   margin-top:clamp(14px,3vh,30px);text-wrap:balance}
-#volver{margin-top:clamp(18px,4vh,34px);width:46px;height:46px;border-radius:50%;display:grid;place-items:center;
-  border:1px solid rgba(8,2,34,.28);color:var(--noche);transition:background .2s,color .2s,border-color .2s,transform .2s}
-#volver svg{width:21px;height:21px}
-#volver:hover{background:var(--noche);border-color:var(--noche);color:#fff;transform:translateX(-3px)}
 #blanco.ver .nucleo > *{animation:entra .8s cubic-bezier(.2,.8,.2,1) both}
 #blanco.ver .nucleo > :nth-child(2){animation-delay:.2s}
 #blanco.ver .nucleo > :nth-child(3){animation-delay:.4s}
@@ -145,15 +140,8 @@ body.final #escena,body.final #gesto{opacity:0;visibility:hidden;transition:opac
 <section id="blanco" aria-hidden="true">
   <button class="marca" id="inicio2">periferi.co</button>
   <div class="nucleo">
-    <h2>Hablemos</h2>
     <a class="correo" href="mailto:hello@periferi.co?subject=Hablemos">hello@periferi.co</a>
-    <button id="volver" type="button" aria-label="Volver al margen" title="Volver al margen">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M7 5 3 9l4 4"></path>
-        <path d="M3 9h11a5 5 0 0 1 0 10H9"></path>
-      </svg>
-    </button>
-  </div>
+</div>
 </section>
 
 <script>
@@ -393,12 +381,12 @@ body.final #escena,body.final #gesto{opacity:0;visibility:hidden;transition:opac
   }
   document.getElementById('inicio').addEventListener('click', reiniciar);
   document.getElementById('inicio2').addEventListener('click', reiniciar);
-  document.getElementById('volver').addEventListener('click', () => {
+  (() => { const v = document.getElementById('volver'); if (v) v.addEventListener('click', () => {
     blanco.classList.remove('ver'); blanco.setAttribute('aria-hidden', true);
     document.body.classList.remove('final');
     enBlanco = false; modo = 'universo'; boom = 0; prog = 0; presion = false; fijar(false); rafaga = 1.6;
     antes = performance.now();
-  });
+  }); })();
 
   /* ---------- Entrada ---------- */
   function fijar(v){ if (!v && fijo && prog > .3) rafaga = prog; fijo = v; }

@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Periferi.co desde el margen</title>
+<link rel="icon" href="data:image/svg+xml,<svg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'><rect%20width='64'%20height='64'%20rx='14'%20fill='%234F09E6'/><circle%20cx='32'%20cy='32'%20r='16'%20fill='none'%20stroke='%23fff'%20stroke-width='4'/><circle%20cx='43.5'%20cy='43.5'%20r='4'%20fill='%23FF58B0'/></svg>">
+<meta name="theme-color" content="#080222">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@200;300;500&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Idea de layout: una sola pantalla cinematográfica. Un anillo 3D de partículas con el
+   centro hueco (la periferia) ocupa la escena; el titular grande y liviano va abajo a la
+   izquierda, la acción abajo a la derecha. Al mantener presionado, la periferia cae en
+   espiral al centro y arma una pirámide. Un solo mundo visual, oscuro. */
+:root{
+  color-scheme: dark;
+  --noche:#080222;
+  --violeta:#4F09E6;
+  --rosa:#FF58B0;
+  --lavanda:#C9B6FF;
+  --blanco:#FFFFFF;
+  --tenue:rgba(255,255,255,.72);
+  --display:"Unbounded","Arial Black",system-ui,sans-serif;
+  --texto:"Figtree","Helvetica Neue",Arial,sans-serif;
+  --borde:clamp(16px,3vw,40px);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--noche);color:var(--blanco);font-family:var(--texto);overflow:hidden;
+  -webkit-font-smoothing:antialiased;user-select:none;-webkit-user-select:none}
+canvas#cielo{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+canvas#cielo:active{cursor:grabbing}
+#grano{position:fixed;inset:0;pointer-events:none;opacity:.1;mix-blend-mode:overlay}
+
+#escena{position:fixed;inset:0;z-index:2;pointer-events:none;display:grid;grid-template-rows:auto 1fr auto;
+  padding:var(--borde)}
+#escena a,#escena button{pointer-events:auto}
+
+header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.marca{font-family:var(--display);font-weight:300;font-size:clamp(18px,1.8vw,24px);letter-spacing:-.01em;
+  cursor:pointer;transition:opacity .2s;pointer-events:auto}
+.marca:hover{opacity:.6}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+.b{font-size:15px;font-weight:600;padding:.8em 1.35em;border-radius:999px;transition:background .2s,color .2s,border-color .2s;white-space:nowrap}
+.b.uno{background:var(--violeta);color:var(--blanco);box-shadow:0 0 0 1px rgba(255,255,255,.18) inset,0 8px 30px rgba(79,9,230,.55)}
+.b.uno:hover{background:var(--rosa);color:var(--noche)}
+.b.dos{background:var(--blanco);color:var(--noche)}
+.b.dos:hover{background:var(--lavanda)}
+.b.dos[aria-pressed="true"]{background:var(--rosa)}
+:focus-visible{outline:2px solid var(--rosa);outline-offset:3px}
+
+.pie{display:flex;flex-direction:column;align-items:flex-start;max-width:min(760px,88vw)}
+.rotulo{display:inline-flex;align-items:center;gap:.6em;font-size:13px;font-weight:500;color:var(--tenue);
+  padding:.45em .9em;border:1px solid rgba(255,255,255,.22);border-radius:6px;margin-bottom:clamp(14px,2.2vh,22px)}
+.rotulo::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--rosa);box-shadow:0 0 10px var(--rosa)}
+h1{font-family:var(--display);font-weight:200;line-height:1.06;letter-spacing:-.035em;
+  font-size:clamp(28px,5vw,84px)}
+.bajada{font-size:clamp(15px,1.3vw,19px);line-height:1.5;color:var(--tenue);max-width:44ch;
+  margin-top:clamp(10px,1.3vh,18px)}
+#hablemos{margin-top:clamp(14px,2vh,24px)}
+.rota{display:inline-block;color:var(--rosa);
+  transition:opacity .18s ease,filter .18s ease,transform .18s ease}
+.rota.cambia{opacity:0;filter:blur(8px);transform:translateY(.06em)}
+.acciones{display:flex;flex-wrap:wrap;gap:10px}
+#gesto{position:fixed;left:var(--cx,50%);top:var(--cy,42%);transform:translate(-50%,-50%);z-index:3;
+  pointer-events:none;width:210px;height:210px;transition:opacity .35s ease;animation:respira 3.4s ease-in-out infinite}
+#gesto svg{width:100%;height:100%;display:block;animation:gira 30s linear infinite}
+#gesto text{font-family:var(--texto);font-size:8.5px;letter-spacing:.12em;fill:var(--tenue)}
+.punto{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:15px;height:15px;border-radius:50%;border:1.5px solid var(--blanco)}
+.punto::after{content:"";position:absolute;inset:-1.5px;border-radius:50%;border:1.5px solid var(--rosa);
+  animation:late 1.9s ease-out infinite}
+@keyframes late{from{transform:scale(1);opacity:1}to{transform:scale(2.9);opacity:0}}
+@keyframes gira{to{transform:rotate(360deg)}}
+body.tocando #gesto{opacity:0;animation:none}
+body.final #escena,body.final #gesto{opacity:0;visibility:hidden;transition:opacity .35s,visibility .35s}
+@keyframes respira{0%,100%{opacity:.95}50%{opacity:.5}}
+
+#blanco{position:fixed;inset:0;z-index:6;background:transparent;color:var(--noche);overflow:hidden;
+  opacity:0;visibility:hidden;transition:opacity .5s,visibility .5s;user-select:text;-webkit-user-select:text}
+#blanco.ver{opacity:1;visibility:visible}
+#blanco .marca{position:absolute;top:var(--borde);left:var(--borde);color:var(--noche)}
+#blanco:not(.ver){pointer-events:none}
+.nucleo{position:absolute;left:var(--cx,50%);top:var(--cy,42%);transform:translate(-50%,-50%);
+  display:flex;flex-direction:column;align-items:center;text-align:center;gap:clamp(14px,2.4vh,22px);
+  width:max-content;max-width:min(78vw,340px)}
+#blanco .correo{font-family:var(--texto);font-weight:500;font-size:clamp(12px,1vw,14px);letter-spacing:.02em;color:var(--violeta);
+  text-decoration:underline;text-underline-offset:.25em;text-decoration-thickness:1.5px;word-break:break-word}
+#blanco .correo:hover{color:var(--rosa)}
+  margin-top:clamp(14px,3vh,30px);text-wrap:balance}
+#blanco.ver .nucleo > *{animation:entra .8s cubic-bezier(.2,.8,.2,1) both}
+#blanco.ver .nucleo > :nth-child(2){animation-delay:.2s}
+#blanco.ver .nucleo > :nth-child(3){animation-delay:.4s}
+#blanco.ver .nucleo > :nth-child(4){animation-delay:.6s}
+@keyframes entra{from{transform:translateY(18px);opacity:.01;filter:blur(8px)}to{transform:none;opacity:1;filter:none}}
+@media (max-width:760px){
+  #gesto{width:180px;height:180px}
+    h1{font-size:clamp(26px,7.6vw,40px)}
+  .bajada{margin-top:8px}
+  #hablemos{margin-top:14px}
+      }
+@media (prefers-reduced-motion:reduce){
+  #blanco,.rota{transition:none}
+  #gesto,#gesto svg{animation:none}
+  .punto::after{animation:none}
+  #blanco.ver .nucleo > *{animation:none}
+}
+</style>
+</head>
+<body>
+<canvas id="cielo" aria-label="Universo de partículas en 3D. Mantener presionado para traer todo al centro."></canvas>
+<div id="grano"></div>
+
+<div id="gesto" aria-hidden="true">
+  <svg viewBox="0 0 200 200">
+    <defs>
+      <path id="aro-texto" fill="none" d="M 100,100 m -34,0 a 34,34 0 1,1 68,0 a 34,34 0 1,1 -68,0"></path>
+    </defs>
+    <text><textPath href="#aro-texto" startOffset="0">Mantén presionado · Mantén presionado · </textPath></text>
+  </svg>
+  <span class="punto"></span>
+</div>
+
+<main id="escena">
+  <header>
+    <button class="marca" id="inicio">periferi.co</button>
+  </header>
+
+  <div></div>
+
+  <section class="pie">
+    <div class="rotulo">Estrategia, ingeniería y diseño</div>
+    <h1>Desde las periferias<br>para cuestionar<br><span class="rota" id="rota">al centro</span></h1>
+    <p class="bajada">Somos tu partner estratégico para que vuelvas a lo importante: tu negocio.</p>
+    <button class="b uno" id="hablemos">Hablemos</button>
+  </section>
+</main>
+
+
+<section id="blanco" aria-hidden="true">
+  <button class="marca" id="inicio2">periferi.co</button>
+  <div class="nucleo">
+    <a class="correo" href="mailto:hello@periferi.co?subject=Hablemos">hello@periferi.co</a>
+</div>
+</section>
+
+<script>
+(() => {
+  const cerrar = () => {};
+
+  /* ---------- La última palabra va rotando ---------- */
+  (() => {
+    const el = document.getElementById('rota');
+    const lista = ['al centro','lo obvio','lo predecible','lo que nadie discute','el statu quo'];
+    let n = 0;
+    const paso = () => {
+      el.classList.add('cambia');
+      setTimeout(() => { n = (n+1) % lista.length; el.textContent = lista[n]; el.classList.remove('cambia'); }, 190);
+      setTimeout(paso, 2400);
+    };
+    setTimeout(paso, 2400);
+  })();
+
+  /* ---------- El pulso también late en la pestaña ---------- */
+  (() => {
+    const link = document.querySelector('link[rel="icon"]');
+    if (!link) return;
+    const N = 14, L = 64, cv2 = document.createElement('canvas');
+    cv2.width = cv2.height = L;
+    const g = cv2.getContext('2d');
+    if (!g) return;
+    const cuadros = [];
+    for (let k = 0; k < N; k++){
+      const p = k/N;                                  // avance del pulso
+      g.clearRect(0,0,L,L);
+      g.fillStyle = '#4F09E6';
+      g.beginPath();
+      if (g.roundRect) g.roundRect(0,0,L,L,14); else g.rect(0,0,L,L);
+      g.fill();
+      g.strokeStyle = 'rgba(255,88,176,' + (1-p).toFixed(3) + ')';
+      g.lineWidth = 3.5;
+      g.beginPath(); g.arc(L/2, L/2, 16 + p*13, 0, Math.PI*2); g.stroke();
+      g.strokeStyle = '#fff'; g.lineWidth = 4;
+      g.beginPath(); g.arc(L/2, L/2, 16, 0, Math.PI*2); g.stroke();
+      cuadros.push(cv2.toDataURL('image/png'));
+    }
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches){ link.href = cuadros[0]; return; }
+    let n = 0;
+    setInterval(() => { link.href = cuadros[n = (n+1) % N]; }, 130);
+  })();
+
+  /* ---------- Grano ---------- */
+  (() => {
+    const g = document.createElement('canvas'); g.width = g.height = 160;
+    const x = g.getContext('2d'), d = x.createImageData(160,160);
+    for (let i = 0; i < d.data.length; i += 4){ const v = Math.random()*255; d.data[i]=d.data[i+1]=d.data[i+2]=v; d.data[i+3]=255; }
+    x.putImageData(d,0,0);
+    document.getElementById('grano').style.backgroundImage = `url(${g.toDataURL()})`;
+  })();
+
+  /* ---------- Escena 3D ---------- */
+  const cv = document.getElementById('cielo'), c = cv.getContext('2d');
+  const calmo = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const COL  = ['#FFFFFF','#FFC2E4','#FF58B0','#C04DFF','#6E3BFF','#9FB4FF','#5EE6FF'];
+  // los mismos grupos en oscuro, para cuando el fondo se vuelve blanco
+  const COLB = ['#16034F','#FF8FC6','#FF58B0','#B62BD6','#4F09E6','#6E7BFF','#00A6C9'];
+  const NC = COL.length, TAU = Math.PI*2;
+  let W, H, cx, cy, S, dpr, N, fondo, DIAG;
+  let R, TH, Y, WV, RP, TP, YP, DL, TM, GR, orden, corte, estrellas = [];
+  let prog = 0, presion = false, fijo = false, rafaga = 0, t = 0, boom = 0, enBlanco = false;
+  let modo = 'universo', entrada = 0, BX, BY, BTH, BR, BV;
+  let mx = 0, my = 0, pmx = 0, pmy = 0;
+  const cometa = {v:0};
+  const gauss = () => (Math.random()+Math.random()+Math.random()+Math.random()-2)/2;
+  const blanco = document.getElementById('blanco');
+
+  function medir(){
+    dpr = Math.min(devicePixelRatio || 1, 2);
+    W = innerWidth; H = innerHeight; DIAG = Math.hypot(W,H);
+    cv.width = W*dpr; cv.height = H*dpr; c.setTransform(dpr,0,0,dpr,0,0);
+    const movil = W < 760;
+    cx = movil ? W*.5 : W*.6; cy = movil ? H*.34 : H*.42;
+    const raiz = document.documentElement.style;
+    raiz.setProperty('--cx', cx + 'px'); raiz.setProperty('--cy', cy + 'px');
+    S = movil ? Math.min(W*.5, H*.3) : Math.min(W*.24, H*.4);
+    fondo = document.createElement('canvas'); fondo.width = W; fondo.height = H;
+    const f = fondo.getContext('2d');
+    f.fillStyle = '#080222'; f.fillRect(0,0,W,H);
+    const mancha = (x,y,r,col,a) => { const g = f.createRadialGradient(x,y,0,x,y,r);
+      g.addColorStop(0,`rgba(${col},${a})`); g.addColorStop(.5,`rgba(${col},${a*.3})`); g.addColorStop(1,`rgba(${col},0)`);
+      f.fillStyle = g; f.fillRect(0,0,W,H); };
+    mancha(cx,cy,S*3,'79,9,230',.6);
+    mancha(W*.95,H*.95,Math.max(W,H)*.65,'255,88,176',.3);
+    mancha(W*.05,H*.12,Math.max(W,H)*.5,'40,150,255',.2);
+    mancha(cx-S*1.6,cy+S*1.1,S*1.6,'192,77,255',.22);
+    const g = f.createLinearGradient(0,H*.5,0,H);
+    g.addColorStop(0,'rgba(8,2,34,0)'); g.addColorStop(1,'rgba(8,2,34,.72)');
+    f.fillStyle = g; f.fillRect(0,0,W,H);
+    estrellas = Array.from({length: movil ? 140 : 320}, () => ({x:Math.random()*W, y:Math.random()*H, s:.5+Math.random()*1.3, f:Math.random()*TAU, v:.6+Math.random()*2.4}));
+  }
+
+  function crear(){
+    N = W < 760 ? 9000 : 18000;
+    R = new Float32Array(N); TH = new Float32Array(N); Y = new Float32Array(N); WV = new Float32Array(N);
+    RP = new Float32Array(N); TP = new Float32Array(N); YP = new Float32Array(N); DL = new Float32Array(N); TM = new Float32Array(N);
+    GR = new Uint8Array(N);
+    const cub = new Uint8Array(N);
+    for (let i = 0; i < N; i++){
+      const q = Math.random(); let r, th, y, g = 0, k;
+      if (q < .07){ r = 1.1 + Math.random()*2.2; th = Math.random()*TAU; y = gauss()*.6; k = 5; }
+      else if (q < .2){ g = 1; r = 1.42 + gauss()*.05; th = Math.random()*TAU; y = gauss()*.012; k = Math.random()<.7 ? 6 : 0; }
+      else if (q < .31){ g = 2; r = 1.78 + gauss()*.04; th = Math.random()*TAU; y = gauss()*.012; k = Math.random()<.7 ? 2 : 1; }
+      else if (q < .37){ g = 3; r = 2.15 + gauss()*.03; th = Math.random()*TAU; y = gauss()*.01; k = Math.random()<.6 ? 4 : 5; }
+      else {
+        r = .46 + Math.pow(Math.random(), 2.3)*1.0;
+        th = Math.random() < .68 ? (i % 4)*(TAU/4) + r*3.1 + gauss()*.45 : Math.random()*TAU;
+        y = gauss()*.035*(.5 + r*1.2);
+        k = r < .56 ? (Math.random()<.6?0:1) : r < .75 ? 1 + (Math.random()*2|0) : r < 1.05 ? 2 + (Math.random()*2|0) : 3 + (Math.random()*2|0);
+        if (Math.random() < .05) k = 6;
+      }
+      R[i] = r; TH[i] = th; Y[i] = y; GR[i] = g; cub[i] = k;
+      WV[i] = (g === 2 ? -.25 : g ? .3 : .24)/Math.pow(r, 1.5); DL[i] = Math.random();
+      TM[i] = Math.random() < .07 ? 2.4 : .8 + Math.random()*.8;
+      // destino: una esfera chica en el centro
+      const rr = Math.cbrt(Math.random())*.1, a = Math.random()*TAU, b = Math.acos(Math.random()*2-1);
+      RP[i] = rr*Math.sin(b); TP[i] = a; YP[i] = rr*Math.cos(b);
+    }
+    orden = Array.from({length:N}, (_, i) => i).sort((a,b) => cub[a]-cub[b]);
+    corte = [0]; let n = 0;
+    for (let k = 1; k <= NC; k++){ while (n < N && cub[orden[n]] < k) n++; corte.push(n); }
+  }
+
+  let antes = performance.now();
+  // anillo de reposo alrededor del centro
+  function anillo(th, rr){
+    const r = Math.min(W,H)*.27*rr;
+    return [cx + Math.cos(th)*r, cy + Math.sin(th)*r];
+  }
+
+  // al explotar las partículas no mueren: se oscurecen y se van a la periferia
+  function alBlanco(){
+    BX = new Float32Array(N); BY = new Float32Array(N);
+    BTH = new Float32Array(N); BR = new Float32Array(N); BV = new Float32Array(N);
+    for (let i = 0; i < N; i++){
+      BX[i] = cx + (Math.random()-.5)*S*.5; BY[i] = cy + (Math.random()-.5)*S*.5;
+      BTH[i] = Math.random()*TAU;
+      BR[i] = 1 + Math.pow(Math.random(), 3)*.85;   // anillo apretado con poco halo
+      BV[i] = (.05 + Math.random()*.1)/BR[i]*(Math.random() < .85 ? 1 : -1);
+    }
+    modo = 'blanco'; entrada = 1; document.body.classList.add('final');
+  }
+
+  function cuadroBlanco(dt){
+    c.setTransform(dpr,0,0,dpr,0,0);
+    c.globalCompositeOperation = 'source-over';
+    c.globalAlpha = entrada ? 1 : .16; c.fillStyle = '#FFFFFF'; c.fillRect(0,0,W,H);
+    entrada = 0;
+    for (let k = 0; k < NC; k++){
+      c.fillStyle = COLB[k]; c.globalAlpha = .42;
+      for (let n = corte[k]; n < corte[k+1]; n++){
+        const i = orden[n];
+        BTH[i] += BV[i]*dt;
+        const d = anillo(BTH[i], BR[i]);
+        BX[i] += (d[0]-BX[i])*.03; BY[i] += (d[1]-BY[i])*.03;
+        const tm = TM[i]*.9;
+        c.fillRect(BX[i]-tm*.5, BY[i]-tm*.5, tm, tm);
+      }
+    }
+    c.globalAlpha = 1;
+  }
+
+  function cuadro(ahora){
+    if (enBlanco) return;
+    const real = Math.min((ahora-antes)/1000, .05), dt = real * (calmo ? .3 : 1); antes = ahora; t += dt;
+    if (modo === 'blanco'){ cuadroBlanco(dt); requestAnimationFrame(cuadro); return; }
+    const activo = presion || fijo;
+    if (boom === 0){
+      prog += activo ? real/3.4 : -real/1.1; prog = prog < 0 ? 0 : prog;
+      if (prog >= 1){ prog = 1; boom = .0001; }
+    } else boom += real/.6;
+    const m = prog*prog*(3-2*prog);
+    rafaga *= .94;
+    pmx += (mx-pmx)*.05; pmy += (my-pmy)*.05;
+    document.body.classList.toggle('tocando', prog > .012);
+
+    // temblor a medida que todo se junta
+    const tb = calmo ? 0 : m*m*7;
+    c.setTransform(dpr,0,0,dpr,(Math.random()-.5)*tb*dpr,(Math.random()-.5)*tb*dpr);
+
+    c.globalCompositeOperation = 'source-over'; c.globalAlpha = 1 - m*.8;   // estelas al colapsar
+    c.drawImage(fondo, -8, -8, W+16, H+16);
+    c.globalAlpha = 1;
+
+    // estrellas
+    c.fillStyle = '#fff';
+    for (const e of estrellas){ c.globalAlpha = (.25 + .75*Math.abs(Math.sin(t*e.v + e.f)))*(1-m); c.fillRect(e.x, e.y, e.s, e.s); }
+    c.globalAlpha = 1;
+
+    // cometas
+    if (!calmo){
+      if (cometa.v <= 0 && Math.random() < .006){ cometa.x = Math.random()*W; cometa.y = -20; cometa.dx = (Math.random()-.5)*900; cometa.dy = 500+Math.random()*500; cometa.v = 1.6; }
+      if (cometa.v > 0){
+        cometa.x += cometa.dx*real; cometa.y += cometa.dy*real; cometa.v -= real;
+        const g = c.createLinearGradient(cometa.x, cometa.y, cometa.x-cometa.dx*.22, cometa.y-cometa.dy*.22);
+        g.addColorStop(0,'rgba(255,255,255,.95)'); g.addColorStop(.3,'rgba(255,88,176,.5)'); g.addColorStop(1,'rgba(255,88,176,0)');
+        c.strokeStyle = g; c.lineWidth = 2; c.beginPath(); c.moveTo(cometa.x, cometa.y); c.lineTo(cometa.x-cometa.dx*.22, cometa.y-cometa.dy*.22); c.stroke();
+      }
+    }
+
+    const incl = 1.12 - m*.5 + pmy*.16, ci = Math.cos(incl), si = Math.sin(incl);
+    const giro = pmx*.14, cg = Math.cos(giro), sg = Math.sin(giro);
+    // planos de los anillos exteriores (precesión)
+    const PA = [0, 1.15, -.95, .55], PB = [0, t*.17, -t*.12 + 2, t*.08 + 4];
+    const ca = PA.map(Math.cos), sa = PA.map(Math.sin), cb = PB.map(Math.cos), sb = PB.map(Math.sin);
+    const pulso = 1 + Math.sin(t*1.3)*.015, giroCol = 1 + m*9;   // todo gira más rápido al caer
+    c.globalCompositeOperation = 'lighter'; c.globalAlpha = .9;
+    for (let k = 0; k < NC; k++){
+      c.fillStyle = COL[k];
+      for (let n = corte[k]; n < corte[k+1]; n++){
+        const i = orden[n], g = GR[i];
+        TH[i] += WV[i]*dt*giroCol;
+        let e = m*1.6 - DL[i]*.6; e = e < 0 ? 0 : e > 1 ? 1 : e; e = e*e*e;
+        const th = TH[i];
+        const r = (R[i] + (RP[i]-R[i])*e) * (1 + rafaga*(.4 + DL[i]*2.2)) * pulso;
+        let y0 = Y[i] + (YP[i]-Y[i])*e;
+        let x0 = r*Math.cos(th), z0 = r*Math.sin(th);
+        if (g){
+          const y1 = y0*ca[g] - z0*sa[g], z1 = y0*sa[g] + z0*ca[g];
+          y0 = y1; const x1 = x0*cb[g] + z1*sb[g]; z0 = -x0*sb[g] + z1*cb[g]; x0 = x1;
+        }
+        const y1 = y0*ci - z0*si, z1 = y0*si + z0*ci;
+        const x2 = x0*cg - y1*sg, y2 = x0*sg + y1*cg;
+        const p = 3.2/(3.2 + z1); if (p <= 0 || p > 6) continue;
+        const tm = TM[i]*p;
+        c.fillRect(cx + x2*S*p - tm*.5, cy + y2*S*p - tm*.5, tm, tm);
+      }
+    }
+
+    // círculo blanco del centro con la cuenta regresiva
+    c.globalCompositeOperation = 'source-over'; c.globalAlpha = 1;
+    if (prog > .01){
+      const b3 = boom*boom*boom;
+      const rc = S*(.02 + .3*m) * (1 + Math.sin(t*9)*.02*m) + b3*DIAG*1.1;
+      const h = c.createRadialGradient(cx,cy,rc*.9,cx,cy,rc*(2.4 + m));
+      h.addColorStop(0,`rgba(255,255,255,${.55*m})`); h.addColorStop(.35,`rgba(255,120,200,${.3*m})`); h.addColorStop(1,'rgba(255,88,176,0)');
+      c.fillStyle = h; c.fillRect(-10,-10,W+20,H+20);
+      c.fillStyle = '#fff'; c.beginPath(); c.arc(cx,cy,rc,0,TAU); c.fill();
+      if (boom === 0 && rc > 26){
+        c.fillStyle = '#080222'; c.textAlign = 'center'; c.textBaseline = 'middle';
+        c.font = `300 ${Math.round(rc*.52)}px Unbounded, sans-serif`;
+        c.fillText(Math.max(0, Math.ceil((1-prog)*100)) + '%', cx, cy + rc*.03);
+      }
+    }
+    if (boom >= 1){ alBlanco(); mostrarBlanco(); }
+    requestAnimationFrame(cuadro);
+  }
+
+  /* ---------- Final en blanco ---------- */
+  function mostrarBlanco(){
+    cerrar();
+    blanco.classList.add('ver'); blanco.setAttribute('aria-hidden', false);
+    blanco.querySelector('.correo').focus({preventScroll:true});
+  }
+  function reiniciar(){
+    blanco.classList.remove('ver'); blanco.setAttribute('aria-hidden', true);
+    document.body.classList.remove('final');
+    enBlanco = false; modo = 'universo'; boom = 0; prog = 0; presion = false; fijar(false); rafaga = 1.6;
+    antes = performance.now();
+  }
+  document.getElementById('inicio').addEventListener('click', reiniciar);
+  document.getElementById('inicio2').addEventListener('click', reiniciar);
+  (() => { const v = document.getElementById('volver'); if (v) v.addEventListener('click', () => {
+    blanco.classList.remove('ver'); blanco.setAttribute('aria-hidden', true);
+    document.body.classList.remove('final');
+    enBlanco = false; modo = 'universo'; boom = 0; prog = 0; presion = false; fijar(false); rafaga = 1.6;
+    antes = performance.now();
+  }); })();
+
+  /* ---------- Entrada ---------- */
+  function fijar(v){ if (!v && fijo && prog > .3) rafaga = prog; fijo = v; }
+  document.getElementById('hablemos').addEventListener('click', () => fijar(!fijo));
+  cv.addEventListener('pointerdown', e => { cerrar(); if (fijo){ fijar(false); return; } presion = true; try{ cv.setPointerCapture(e.pointerId); }catch(_){} });
+  const arriba = () => { if (presion){ presion = false; if (prog > .3 && boom === 0) rafaga = prog; } };
+  cv.addEventListener('pointerup', arriba); cv.addEventListener('pointercancel', arriba);
+  addEventListener('pointermove', e => { mx = e.clientX/W*2 - 1; my = e.clientY/H*2 - 1; });
+  addEventListener('keydown', e => { if (e.code === 'Space' && e.target === document.body){ e.preventDefault(); if (!e.repeat) fijar(!fijo); } });
+  let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { const movilAntes = N < 18000; medir(); if ((W < 760) !== movilAntes) crear(); }, 150); });
+
+  medir(); crear(); requestAnimationFrame(cuadro);
+})();
+</script>
+</body>
+</html>
